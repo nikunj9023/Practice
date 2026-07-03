@@ -1,0 +1,13 @@
+[Unit]
+Description=Practice Flask App
+After=network.target
+
+[Service]
+User=$USER
+WorkingDirectory=/home/mrindiandeveloper/Local Disk E/Projects/Practice
+ExecStart=/usr/bin/python3 /home/mrindiandeveloper/Local Disk E/Projects/Practice/app.py
+Restart=on-failure
+Environment=PYTHONUNBUFFERED=1
+
+[Install]
+WantedBy=multi-user.target

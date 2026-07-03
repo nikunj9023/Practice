@@ -1,0 +1,26 @@
+[INFO    ] 2026-07-03 06:38:12 | utils.logger:104 | Logging initialised | level=INFO | file=logs/crm.log
+[INFO    ] 2026-07-03 06:38:12 | app:56 | Starting Mini CRM | env=development
+[INFO    ] 2026-07-03 06:38:12 | app:74 | Database tables verified / created.
+[INFO    ] 2026-07-03 06:38:12 | app:89 | Blueprints registered: customers, leads, followups, notes
+[INFO    ] 2026-07-03 06:38:12 | services.customer_service:136 | CustomerService.create_customer | email=nikunj@example.com
+[INFO    ] 2026-07-03 06:38:12 | repositories.customer_repository:78 | Customer created | id=1 email=nikunj@example.com
+[INFO    ] 2026-07-03 06:38:12 | services.customer_service:171 | CustomerService.create_customer: success | id=1 email=nikunj@example.com
+[INFO    ] 2026-07-03 06:38:12 | services.lead_service:96 | LeadService.create_lead | email=ravi@example.com
+[INFO    ] 2026-07-03 06:38:12 | repositories.lead_repository:66 | Lead created | id=1 email=ravi@example.com
+[INFO    ] 2026-07-03 06:38:12 | services.lead_service:125 | LeadService.create_lead: success | id=1
+[INFO    ] 2026-07-03 06:38:12 | services.lead_service:182 | LeadService.update_lead | id=1
+[INFO    ] 2026-07-03 06:38:12 | repositories.lead_repository:156 | Lead updated | id=1 status=contacted
+[INFO    ] 2026-07-03 06:38:12 | services.lead_service:219 | LeadService.update_lead: success | id=1 new_status=contacted
+[INFO    ] 2026-07-03 06:38:12 | services.lead_service:182 | LeadService.update_lead | id=1
+[INFO    ] 2026-07-03 06:38:12 | repositories.lead_repository:156 | Lead updated | id=1 status=qualified
+[INFO    ] 2026-07-03 06:38:12 | services.lead_service:219 | LeadService.update_lead: success | id=1 new_status=qualified
+[INFO    ] 2026-07-03 06:38:12 | services.lead_service:249 | LeadService.convert_lead | lead_id=1
+[INFO    ] 2026-07-03 06:38:12 | repositories.customer_repository:78 | Customer created | id=2 email=ravi@example.com
+[INFO    ] 2026-07-03 06:38:12 | services.lead_service:280 | LeadService.convert_lead: new customer created id=2
+[INFO    ] 2026-07-03 06:38:12 | repositories.lead_repository:156 | Lead updated | id=1 status=converted
+[INFO    ] 2026-07-03 06:38:12 | services.lead_service:288 | LeadService.convert_lead: success | lead_id=1 → customer_id=2
+[INFO    ] 2026-07-03 06:38:12 | services.note_service:103 | NoteService.create_note | customer_id=1
+[INFO    ] 2026-07-03 06:38:12 | repositories.note_repository:60 | Note created | id=1 customer_id=1
+[INFO    ] 2026-07-03 06:38:12 | services.note_service:128 | NoteService.create_note: success | id=1
+[INFO    ] 2026-07-03 06:38:12 | services.note_service:255 | NoteService.pin_note | id=1
+[INFO    ] 2026-07-03 06:38:12 | repositories.note_repository:169 | Note updated | id=1
