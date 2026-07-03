@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import api from '../../services/api';
 
 const EmployeeTable = () => {
@@ -12,18 +12,64 @@ const EmployeeTable = () => {
   const [totalPages, setTotalPages] = useState(1);
   const limit = 10;
 
-  // Placeholder for Image Upload
-  const handleImageUpload = (id) => {
-    // In a real implementation, this would open a file picker and post the image to the server
-    alert(`Image upload placeholder for employee ID: ${id}`);
+  // Image upload — use ref so onChange closure always reads the latest id
+  const fileInputRef = useRef(null);
+  const uploadingIdRef = useRef(null);
+  const [uploadingId, setUploadingId] = useState(null); // only for UI spinner
+
+  const handleImageClick = (id) => {
+    uploadingIdRef.current = id;   // set ref immediately (synchronous)
+    setUploadingId(id);            // also set state to show spinner in UI
+    fileInputRef.current.click();
+  };
+
+  const handleFileChange = async (e) => {
+    const file = e.target.files[0];
+    const empId = uploadingIdRef.current;  // always fresh — reads from ref, not state
+
+    if (!file || !empId) return;
+
+    // Validate type & size (max 2MB)
+    if (!file.type.startsWith('image/')) {
+      alert('Please select a valid image file.');
+      e.target.value = '';
+      return;
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      alert('Image must be smaller than 2MB.');
+      e.target.value = '';
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = async (readerEvent) => {
+      const base64 = readerEvent.target.result; // data:image/...;base64,...
+      try {
+        const res = await api.post(`/employees/${empId}/upload-image`, { image: base64 });
+        // Update the employee in state immediately
+        setEmployees(prev =>
+          prev.map(emp =>
+            emp.id === empId
+              ? { ...emp, profile_image_url: res.data.profile_image_url }
+              : emp
+          )
+        );
+      } catch (err) {
+        console.error('Upload failed', err);
+        alert('Failed to upload image. Please try again.');
+      } finally {
+        uploadingIdRef.current = null;
+        setUploadingId(null);
+        e.target.value = ''; // reset so same file can be selected again
+      }
+    };
+    reader.readAsDataURL(file);
   };
 
   const fetchEmployees = async () => {
     setLoading(true);
     setError(null);
     try {
-      // Assuming a standardized REST API response: { data: [...], total_pages: 5, current_page: 1 }
-      // Using ILIKE search filter and limit/offset approach via params
       const response = await api.get('/employees', {
         params: {
           search: searchTerm,
@@ -32,7 +78,6 @@ const EmployeeTable = () => {
         }
       });
       
-      // If the backend returns mocked data format or standard format
       const data = response.data.data || response.data;
       setEmployees(Array.isArray(data) ? data : []);
       
@@ -73,6 +118,7 @@ const EmployeeTable = () => {
   };
 
   return (
+    <>
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
       <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
         <h2 className="text-2xl font-bold text-gray-800 dark:text-white">Employees</h2>
@@ -140,14 +186,21 @@ const EmployeeTable = () => {
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex-shrink-0 h-10 w-10">
                       <div 
-                        onClick={() => handleImageUpload(emp.id)}
-                        className="h-10 w-10 rounded-full bg-gray-200 dark:bg-gray-600 flex items-center justify-center cursor-pointer overflow-hidden border border-gray-300 dark:border-gray-500"
-                        title="Click to upload new image"
+                        onClick={() => handleImageClick(emp.id)}
+                        className="h-10 w-10 rounded-full bg-gray-200 dark:bg-gray-600 flex items-center justify-center cursor-pointer overflow-hidden border-2 border-transparent hover:border-blue-400 transition-all group relative"
+                        title="Click to upload photo"
                       >
-                        {emp.profile_image_url ? (
-                          <img src={emp.profile_image_url} alt="" className="h-full w-full object-cover" />
+                        {uploadingId === emp.id ? (
+                          <span className="text-xs text-blue-500 animate-pulse">⏳</span>
+                        ) : emp.profile_image_url ? (
+                          <>
+                            <img src={emp.profile_image_url} alt="" className="h-full w-full object-cover" />
+                            <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-40 flex items-center justify-center transition-all">
+                              <span className="text-white text-xs opacity-0 group-hover:opacity-100">✏️</span>
+                            </div>
+                          </>
                         ) : (
-                          <span className="text-gray-500 dark:text-gray-300 text-sm">📸</span>
+                          <span className="text-gray-500 dark:text-gray-300 text-sm group-hover:scale-110 transition-transform">📸</span>
                         )}
                       </div>
                     </div>
@@ -247,6 +300,16 @@ const EmployeeTable = () => {
         </div>
       </div>
     </div>
+
+      {/* Hidden file input for image upload */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={handleFileChange}
+      />
+    </>
   );
 };
 

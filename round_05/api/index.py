@@ -3,9 +3,12 @@ from flask_cors import CORS
 from werkzeug.security import generate_password_hash, check_password_hash
 import jwt
 import datetime
+import base64
+import os
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'round05-secret-key'
+app.config['MAX_CONTENT_LENGTH'] = 5 * 1024 * 1024  # 5 MB max upload
 CORS(app)
 
 # ─── Mock Data ───────────────────────────────────────────────────────────────
@@ -32,6 +35,11 @@ employees = [
     {"id": 11, "first_name": "Karan",    "last_name": "Malhotra", "email": "karan@example.com",    "role": "Security Engineer",  "department": "Infrastructure"},
     {"id": 12, "first_name": "Neha",     "last_name": "Desai",    "email": "neha@example.com",     "role": "Content Writer",     "department": "Marketing"},
 ]
+
+attendance_db = []
+leaves_db = []
+
+
 
 # ─── Auth Helpers ─────────────────────────────────────────────────────────────
 
@@ -152,6 +160,145 @@ def delete_employee(emp_id):
     employees = [e for e in employees if e['id'] != emp_id]
     return jsonify({'message': f'Employee {emp_id} deleted successfully'})
 
+
+@app.route('/api/employees/<int:emp_id>/upload-image', methods=['POST'])
+def upload_employee_image(emp_id):
+    emp = next((e for e in employees if e['id'] == emp_id), None)
+    if not emp:
+        return jsonify({'error': 'Employee not found'}), 404
+
+    data = request.get_json()
+    if not data or 'image' not in data:
+        return jsonify({'error': 'No image data provided'}), 400
+
+    image_data = data['image']  # Expects a base64 data URL: "data:image/png;base64,..."
+    if not image_data.startswith('data:image/'):
+        return jsonify({'error': 'Invalid image format. Must be a base64 data URL.'}), 400
+
+    emp['profile_image_url'] = image_data
+    return jsonify({'message': 'Image uploaded successfully', 'profile_image_url': image_data})
+
+# ─── Attendance Routes ────────────────────────────────────────────────────────
+
+@app.route('/api/attendance', methods=['GET'])
+def get_attendance():
+    date = request.args.get('date', '')
+    if not date:
+        return jsonify({'error': 'Date is required'}), 400
+        
+    result = []
+    for emp in employees:
+        record = next((r for r in attendance_db if r['employee_id'] == emp['id'] and r['date'] == date), None)
+        status = record['status'] if record else 'Absent'
+        
+        result.append({
+            'employee_id': emp['id'],
+            'first_name': emp['first_name'],
+            'last_name': emp['last_name'],
+            'role': emp['role'],
+            'department': emp['department'],
+            'status': status,
+            'date': date
+        })
+        
+    return jsonify(result)
+
+@app.route('/api/attendance', methods=['POST'])
+def update_attendance():
+    data = request.get_json()
+    emp_id = data.get('employee_id')
+    date = data.get('date')
+    status = data.get('status')
+    
+    if not emp_id or not date or not status:
+        return jsonify({'error': 'Missing data'}), 400
+        
+    record = next((r for r in attendance_db if r['employee_id'] == emp_id and r['date'] == date), None)
+    if record:
+        record['status'] = status
+    else:
+        attendance_db.append({
+            'employee_id': emp_id,
+            'date': date,
+            'status': status
+        })
+        
+    return jsonify({'message': 'Attendance updated'})
+
+
+# ─── Leaves Routes ────────────────────────────────────────────────────────────
+
+@app.route('/api/leaves', methods=['GET'])
+def get_leaves():
+    result = []
+    for leave in leaves_db:
+        emp = next((e for e in employees if e['id'] == int(leave['employee_id'])), None)
+        if emp:
+            result.append({
+                'id': leave['id'],
+                'employee_id': emp['id'],
+                'first_name': emp['first_name'],
+                'last_name': emp['last_name'],
+                'department': emp['department'],
+                'leave_type': leave['leave_type'],
+                'from_date': leave['from_date'],
+                'to_date': leave['to_date'],
+                'reason': leave['reason'],
+                'status': leave['status']
+            })
+    # Sort so newest are first
+    result.sort(key=lambda x: x['id'], reverse=True)
+    return jsonify(result)
+
+@app.route('/api/leaves', methods=['POST'])
+def create_leave():
+    data = request.get_json()
+    new_id = max((l['id'] for l in leaves_db), default=0) + 1
+    
+    emp_id = int(data.get('employee_id', 0))
+    emp = next((e for e in employees if e['id'] == emp_id), None)
+    if not emp:
+        return jsonify({'error': 'Employee not found'}), 404
+        
+    new_leave = {
+        'id': new_id,
+        'employee_id': emp_id,
+        'leave_type': data.get('leave_type', ''),
+        'from_date': data.get('from_date', ''),
+        'to_date': data.get('to_date', ''),
+        'reason': data.get('reason', ''),
+        'status': 'Pending'
+    }
+    leaves_db.append(new_leave)
+    
+    # Return formatted leave for the frontend
+    result = {
+        'id': new_leave['id'],
+        'employee_id': emp['id'],
+        'first_name': emp['first_name'],
+        'last_name': emp['last_name'],
+        'department': emp['department'],
+        'leave_type': new_leave['leave_type'],
+        'from_date': new_leave['from_date'],
+        'to_date': new_leave['to_date'],
+        'reason': new_leave['reason'],
+        'status': new_leave['status']
+    }
+    return jsonify(result), 201
+
+@app.route('/api/leaves/<int:leave_id>', methods=['PATCH'])
+def update_leave_status(leave_id):
+    data = request.get_json()
+    status = data.get('status')
+    
+    leave = next((l for l in leaves_db if l['id'] == leave_id), None)
+    if not leave:
+        return jsonify({'error': 'Leave not found'}), 404
+        
+    if status:
+        leave['status'] = status
+        
+    return jsonify({'message': 'Leave updated'})
 
 # ─── Run ──────────────────────────────────────────────────────────────────────
 

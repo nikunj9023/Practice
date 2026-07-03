@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import Sidebar from './components/Sidebar';
+import Dashboard from './features/dashboard/Dashboard';
 import EmployeeTable from './features/employee/EmployeeTable';
 import AttendancePage from './features/attendance/AttendancePage';
 import LeavePage from './features/leave/LeavePage';
+import SettingsPage from './features/settings/SettingsPage';
 
 // A simple dashboard layout wrapper
 const DashboardLayout = ({ children }) => {
@@ -27,10 +29,7 @@ const App = () => {
     <Routes>
       <Route path="/" element={
         <DashboardLayout>
-          <div>
-            <h1 className="text-3xl font-bold mb-4">Dashboard Home</h1>
-            <p className="text-gray-600">Welcome to ERP Pro. Navigate using the sidebar.</p>
-          </div>
+          <Dashboard />
         </DashboardLayout>
       } />
       
@@ -49,6 +48,12 @@ const App = () => {
       <Route path="/leaves" element={
         <DashboardLayout>
           <LeavePage />
+        </DashboardLayout>
+      } />
+      
+      <Route path="/settings" element={
+        <DashboardLayout>
+          <SettingsPage />
         </DashboardLayout>
       } />
       
