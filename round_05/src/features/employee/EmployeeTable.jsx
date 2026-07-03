@@ -188,7 +188,7 @@ const EmployeeTable = () => {
                       <div 
                         onClick={() => handleImageClick(emp.id)}
                         className="h-10 w-10 rounded-full bg-gray-200 dark:bg-gray-600 flex items-center justify-center cursor-pointer overflow-hidden border-2 border-transparent hover:border-blue-400 transition-all group relative"
-                        title="Click to upload photo"
+                        title="Click to upload new profile photo"
                       >
                         {uploadingId === emp.id ? (
                           <span className="text-xs text-blue-500 animate-pulse">⏳</span>
