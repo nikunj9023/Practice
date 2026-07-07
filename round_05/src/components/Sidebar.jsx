@@ -3,7 +3,7 @@ import { NavLink } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { logout } from '../features/auth/authSlice';
 
-const Sidebar = ({ isCollapsed, toggleSidebar }) => {
+const Sidebar = ({ isCollapsed, isMobileOpen, toggleSidebar, closeMobileSidebar }) => {
   const dispatch = useDispatch();
 
   const handleLogout = () => {
@@ -15,13 +15,13 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
     { name: 'Employees', path: '/employees', icon: '👥' },
     { name: 'Attendance', path: '/attendance', icon: '📅' },
     { name: 'Leave Requests', path: '/leaves', icon: '✈️' },
+    { name: 'Admin Panel', path: '/admin', icon: '🛡️' },
     { name: 'Settings', path: '/settings', icon: '⚙️' },
   ];
 
   return (
     <aside 
-      className={`fixed top-0 left-0 h-screen transition-all duration-300 z-40 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700
-      ${isCollapsed ? 'w-20' : 'w-64'} `}
+      className={`fixed inset-y-0 left-0 z-40 flex flex-col overflow-hidden transition-transform duration-300 border-r border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 ${isMobileOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 w-64 ${isCollapsed ? 'md:w-20' : 'md:w-64'}`}
     >
       <div className="flex flex-col h-full">
         {/* Logo and Toggle */}
@@ -31,13 +31,22 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
               ERP Pro
             </span>
           )}
-          <button 
-            onClick={toggleSidebar}
-            className="p-2 text-gray-500 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            aria-label="Toggle Sidebar"
-          >
-            {isCollapsed ? '▶' : '◀'}
-          </button>
+          <div className="flex items-center gap-2">
+            <button 
+              onClick={toggleSidebar}
+              className="p-2 text-gray-500 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              aria-label="Toggle Sidebar"
+            >
+              {isCollapsed ? '▶' : '◀'}
+            </button>
+            <button
+              onClick={closeMobileSidebar}
+              className="p-2 text-gray-500 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 md:hidden"
+              aria-label="Close Sidebar"
+            >
+              ✕
+            </button>
+          </div>
         </div>
 
         {/* Navigation Links */}
@@ -53,6 +62,7 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
                     : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
                 }`
               }
+              onClick={closeMobileSidebar}
             >
               <span className="text-xl">{item.icon}</span>
               {!isCollapsed && (
